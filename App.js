@@ -1,5 +1,11 @@
 import { useRef, useState } from "react";
-import { Animated, Easing, Pressable, TouchableOpacity } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  Easing,
+  Pressable,
+  TouchableOpacity,
+} from "react-native";
 import styled from "styled-components/native";
 
 const Container = styled.View`
@@ -14,22 +20,54 @@ const Box = styled.View`
 `;
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
 export default function App() {
-  const [up, setUp] = useState(false);
-  const toggleUp = () => setUp((prev) => !prev);
-  const POSITION = useRef(new Animated.ValueXY({ x: 0, y: 300 })).current;
+  const POSITION = useRef(
+    new Animated.ValueXY({
+      x: -SCREEN_WIDTH / 2 + 100,
+      y: -SCREEN_HEIGHT / 2 + 100,
+    })
+  ).current;
+
+  const topLeft = Animated.timing(POSITION, {
+    toValue: {
+      x: -SCREEN_WIDTH / 2 + 100,
+      y: -SCREEN_HEIGHT / 2 + 100,
+    },
+    useNativeDriver: false,
+  });
+
+  const bottomLeft = Animated.timing(POSITION, {
+    toValue: {
+      x: -SCREEN_WIDTH / 2 + 100,
+      y: SCREEN_HEIGHT / 2 - 100,
+    },
+    useNativeDriver: false,
+  });
+
+  const bottomRight = Animated.timing(POSITION, {
+    toValue: {
+      x: SCREEN_WIDTH / 2 - 100,
+      y: SCREEN_HEIGHT / 2 - 100,
+    },
+    useNativeDriver: false,
+  });
+
+  const topRight = Animated.timing(POSITION, {
+    toValue: {
+      x: SCREEN_WIDTH / 2 - 100,
+      y: -SCREEN_HEIGHT / 2 + 100,
+    },
+    useNativeDriver: false,
+  });
 
   const moveUp = () => {
-    Animated.timing(POSITION, {
-      toValue: up ? 300 : -300,
-      // useNativeDriver: true,
-      duration: 2000,
-    }).start(toggleUp);
+    Animated.loop(
+      Animated.sequence([bottomLeft, bottomRight, topRight, topLeft])
+    ).start();
   };
-  const rotation = POSITION.y.interpolate({
-    inputRange: [-300, 300],
-    outputRange: ["-360deg", "360deg"],
-  });
+
   const borderRadius = POSITION.y.interpolate({
     inputRange: [-300, 300],
     outputRange: [100, 0],
@@ -38,7 +76,7 @@ export default function App() {
     inputRange: [-300, 300],
     outputRange: ["rgb(255, 99, 71)", "rgb(71, 166, 255)"],
   });
-  POSITION.addListener(() => console.log(rotation));
+
   return (
     <Container>
       <Pressable onPress={moveUp}>
@@ -46,7 +84,7 @@ export default function App() {
           style={{
             borderRadius,
             backgroundColor: bgColor,
-            transform: [{ rotateY: rotation }, { translateY: POSITION.y }],
+            transform: [...POSITION.getTranslateTransform()],
           }}
         ></AnimatedBox>
       </Pressable>
